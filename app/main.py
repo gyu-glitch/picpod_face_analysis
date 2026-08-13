@@ -26,7 +26,22 @@ app = FastAPI(title="픽팟 관상 분석", version="0.1.0")
 DISCLAIMER = "본 결과는 오락 목적이며 과학적 근거가 없습니다."
 STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
 FACES_DIR = Path(__file__).resolve().parent.parent / "tests" / "faces"
+RESULTS_DIR = Path(__file__).resolve().parent.parent / "results"
 ALLOWED_MODELS = {"exaone3.5:2.4b", "exaone3.5:7.8b"}
+
+
+def _save_results(analysis: FaceAnalysis, interpretations: list[dict]) -> str:
+    """분석 결과를 results/에 영속화 — 클라이언트 수신기가 폴링해 가져간다."""
+    from datetime import datetime
+    batch = f"{datetime.now():%Y%m%d_%H%M%S}_{analysis.analysis_id[:8]}"
+    out = RESULTS_DIR / batch
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "analysis.json").write_text(
+        json.dumps(analysis.model_dump(), ensure_ascii=False, indent=2), encoding="utf-8")
+    for kiosk in interpretations:
+        (out / f"KioskData_{kiosk['personaType']}.json").write_text(
+            json.dumps(kiosk, ensure_ascii=False, indent=2), encoding="utf-8")
+    return batch
 
 
 def _decode_upload(data: bytes) -> np.ndarray:
@@ -134,7 +149,28 @@ async def analyze_full(
         kiosk, c = llm.generate_kiosk_data(p, analysis.model_dump(), model or None)
         interpretations.append(kiosk)
         claims[PERSONA_KIOSK[p]] = c
-    return {"analysis": analysis, "interpretations": interpretations, "claims": claims}
+    batch = _save_results(analysis, interpretations)
+    return {"analysis": analysis, "interpretations": interpretations,
+            "claims": claims, "batch": batch}
+
+
+@app.get("/api/results")
+def list_results(after: str = ""):
+    """after(배치명) 이후 생성된 결과 배치 목록 — 클라이언트 수신기 폴링용."""
+    if not RESULTS_DIR.exists():
+        return []
+    batches = sorted(d.name for d in RESULTS_DIR.iterdir() if d.is_dir())
+    new = [b for b in batches if b > after]
+    return [{"batch": b, "files": sorted(f.name for f in (RESULTS_DIR / b).glob("*.json"))}
+            for b in new]
+
+
+@app.get("/api/results/{batch}/{filename}")
+def get_result_file(batch: str, filename: str):
+    path = (RESULTS_DIR / batch / filename).resolve()
+    if not path.is_file() or RESULTS_DIR.resolve() not in path.parents:
+        raise HTTPException(404, "파일 없음")
+    return FileResponse(path, media_type="application/json")
 
 
 @app.get("/api/life-graph-svg")
