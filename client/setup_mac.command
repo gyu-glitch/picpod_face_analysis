@@ -1,8 +1,8 @@
 #!/bin/bash
 # ============================================================
 #  PicPod face-analysis client setup (macOS)
-#  Just double-click. If blocked by Gatekeeper:
-#  right-click -> Open -> Open (first time only).
+#  Just double-click. If Gatekeeper blocks it (first time only):
+#  System Settings -> Privacy & Security -> "Open Anyway".
 # ============================================================
 set -e
 cd "$(dirname "$0")"
@@ -49,6 +49,9 @@ fi
 # ---------- 4. Shortcuts + autostart ----------
 echo "[4/4] Shortcuts + autostart..."
 chmod +x run_mac.command setup_mac.command
+# 이 setup은 사용자가 Gatekeeper에서 직접 승인해 실행된 것 —
+# 같은 폴더의 나머지 파일(run_mac 등)이 또 차단되지 않게 격리 속성 해제
+xattr -dr com.apple.quarantine . 2>/dev/null || true
 
 # Desktop shortcuts
 ln -sf "$(pwd)/run_mac.command" "$HOME/Desktop/PicPod Result Receiver.command"

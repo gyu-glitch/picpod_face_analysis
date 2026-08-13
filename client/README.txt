@@ -10,8 +10,9 @@
 
 ■ macOS
 1. 이 폴더를 Mac 아무 곳에나 복사
-2. 터미널을 열고:  bash <폴더경로>/setup_mac.command
-   (폴더를 터미널 창에 드래그하면 경로가 입력됨. 최초 1회만 터미널 필요)
+2. [setup_mac.command] 더블클릭
+   * "열지 않음" 경고 시 (최초 1회): [완료] → 시스템 설정 → 개인정보 보호 및 보안
+     → 아래쪽 [그래도 열기] → 암호 입력 → [열기]
 3. 끝. 수신기가 백그라운드로 시작되고(로그인 시 자동 시작),
    바탕화면에 [PicPod Result Receiver], [PicPod Analysis GUI] 생김
    * 폴더를 옮기면 setup_mac.command를 다시 실행할 것
