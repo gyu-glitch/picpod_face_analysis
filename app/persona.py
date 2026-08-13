@@ -5,31 +5,35 @@
 - 문체 규칙: 마지막 단계에서 한 번만 적용.
 """
 
-CATEGORIES = ["temperament", "relationship", "money", "execution", "health"]
+# 카테고리 키는 키오스크 소비 포맷(KioskData_*.json)과 동일하게 맞춘다
+CATEGORIES = ["temperament", "relationships", "finances", "executionAbility", "health"]
 CATEGORY_KO = {
-    "temperament": "기질", "relationship": "대인관계", "money": "금전",
-    "execution": "실행력", "health": "건강·생활",
+    "temperament": "기질", "relationships": "대인관계", "finances": "금전",
+    "executionAbility": "실행력", "health": "건강·생활",
 }
 PERSONAS = ["KIND", "T", "ROAST"]
 PERSONA_KO = {"KIND": "다정다감", "T": "완전T", "ROAST": "독설가"}
+# 키오스크 personaType 표기
+PERSONA_KIOSK = {"KIND": "kind", "T": "factos", "ROAST": "spicy"}
+PERSONA_FROM_KIOSK = {v: k for k, v in PERSONA_KIOSK.items()}
 
 # §3 카테고리별 질문 매트릭스
 QUESTION_MATRIX: dict[tuple[str, str], str] = {
-    ("KIND", "temperament"):   "나를 살리는 힘은 무엇인가",
-    ("T", "temperament"):      "판단 구조는 어떻게 작동하는가",
-    ("ROAST", "temperament"):  "자기 발목을 잡는 성향은 무엇인가",
-    ("KIND", "relationship"):  "복이 되는 관계는 어떤 관계인가",
-    ("T", "relationship"):     "관계를 어떤 방식으로 운영하는가",
-    ("ROAST", "relationship"): "관계에서 반복해서 보는 손해는 무엇인가",
-    ("KIND", "money"):         "돈과 기회가 붙는 경로는 어디인가",
-    ("T", "money"):            "돈의 의사결정과 축적 구조는 어떠한가",
-    ("ROAST", "money"):        "돈이 새는 반복 패턴은 무엇인가",
-    ("KIND", "execution"):     "어떤 환경에서 잘 풀리는가",
-    ("T", "execution"):        "실행 프로세스는 어떻게 구성되는가",
-    ("ROAST", "execution"):    "일을 꼬이게 하는 습관은 무엇인가",
-    ("KIND", "health"):        "무엇이 나를 회복시키는가",
-    ("T", "health"):           "에너지를 어떻게 운영하는가",
-    ("ROAST", "health"):       "컨디션을 망치는 습관은 무엇인가",
+    ("KIND", "temperament"):        "나를 살리는 힘은 무엇인가",
+    ("T", "temperament"):           "판단 구조는 어떻게 작동하는가",
+    ("ROAST", "temperament"):       "자기 발목을 잡는 성향은 무엇인가",
+    ("KIND", "relationships"):      "복이 되는 관계는 어떤 관계인가",
+    ("T", "relationships"):         "관계를 어떤 방식으로 운영하는가",
+    ("ROAST", "relationships"):     "관계에서 반복해서 보는 손해는 무엇인가",
+    ("KIND", "finances"):           "돈과 기회가 붙는 경로는 어디인가",
+    ("T", "finances"):              "돈의 의사결정과 축적 구조는 어떠한가",
+    ("ROAST", "finances"):          "돈이 새는 반복 패턴은 무엇인가",
+    ("KIND", "executionAbility"):   "어떤 환경에서 잘 풀리는가",
+    ("T", "executionAbility"):      "실행 프로세스는 어떻게 구성되는가",
+    ("ROAST", "executionAbility"):  "일을 꼬이게 하는 습관은 무엇인가",
+    ("KIND", "health"):             "무엇이 나를 회복시키는가",
+    ("T", "health"):                "에너지를 어떻게 운영하는가",
+    ("ROAST", "health"):            "컨디션을 망치는 습관은 무엇인가",
 }
 
 # §4 근거 풀 15개: 키 → (한국어명, 분석 데이터에서 값을 뽑는 방법)
@@ -53,21 +57,21 @@ EVIDENCE_POOL = {
 
 # §4 PRIMARY 할당표 — (페르소나, 카테고리) → 근거 키. 15셀 = 15근거 전부 사용.
 PRIMARY_EVIDENCE: dict[tuple[str, str], str] = {
-    ("KIND", "temperament"):   "OHAENG_MAIN",
-    ("T", "temperament"):      "EYEBROW",
-    ("ROAST", "temperament"):  "JAW_CHIN",
-    ("KIND", "relationship"):  "EYE",
-    ("T", "relationship"):     "MOUTH",
-    ("ROAST", "relationship"): "CHEEKBONE",
-    ("KIND", "money"):         "NOSE",
-    ("T", "money"):            "SAMJEONG_RATIO",
-    ("ROAST", "money"):        "PHILTRUM",
-    ("KIND", "execution"):     "FOREHEAD_UPPER",
-    ("T", "execution"):        "MID_ZONE",
-    ("ROAST", "execution"):    "GLABELLA",
-    ("KIND", "health"):        "FACE_SHAPE",
-    ("T", "health"):           "SYMMETRY",
-    ("ROAST", "health"):       "OHAENG_SUB",
+    ("KIND", "temperament"):        "OHAENG_MAIN",
+    ("T", "temperament"):           "EYEBROW",
+    ("ROAST", "temperament"):       "JAW_CHIN",
+    ("KIND", "relationships"):      "EYE",
+    ("T", "relationships"):         "MOUTH",
+    ("ROAST", "relationships"):     "CHEEKBONE",
+    ("KIND", "finances"):           "NOSE",
+    ("T", "finances"):              "SAMJEONG_RATIO",
+    ("ROAST", "finances"):          "PHILTRUM",
+    ("KIND", "executionAbility"):   "FOREHEAD_UPPER",
+    ("T", "executionAbility"):      "MID_ZONE",
+    ("ROAST", "executionAbility"):  "GLABELLA",
+    ("KIND", "health"):             "FACE_SHAPE",
+    ("T", "health"):                "SYMMETRY",
+    ("ROAST", "health"):            "OHAENG_SUB",
 }
 
 # §6 문체 규칙 (프롬프트 주입용)

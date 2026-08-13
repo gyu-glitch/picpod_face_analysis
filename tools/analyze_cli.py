@@ -28,6 +28,7 @@ print(json.dumps(analysis.model_dump(), ensure_ascii=False, indent=2))
 
 for p in [x.strip().upper() for x in args.persona.split(",") if x.strip()]:
     t0 = time.time()
-    result = llm.generate_persona(p, analysis.model_dump())
+    kiosk, claims = llm.generate_kiosk_data(p, analysis.model_dump())
     print(f"\n=== 페르소나 {p} ({time.time() - t0:.1f}s) ===")
-    print(json.dumps(result, ensure_ascii=False, indent=2))
+    print(json.dumps(kiosk, ensure_ascii=False, indent=2))
+    print("claims(검수용):", json.dumps(claims, ensure_ascii=False))

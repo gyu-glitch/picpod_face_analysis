@@ -113,9 +113,9 @@ button:disabled { background: #4a3f6b; cursor: wait; }
 const $ = id => document.getElementById(id);
 const OHAENG_KO = { wood: "목(木)", fire: "화(火)", earth: "토(土)", metal: "금(金)", water: "수(水)" };
 const SJ_KO = { upper: "상정", mid: "중정", lower: "하정" };
-const PERSONA_KO = { KIND: "다정다감", T: "완전T", ROAST: "독설가" };
-const CAT_KO = { temperament: "기질", relationship: "대인관계", money: "금전",
-  execution: "실행력", health: "건강·생활" };
+const PERSONA_KO = { kind: "다정다감", factos: "완전T", spicy: "독설가" };
+const CAT_KO = { temperament: "기질", relationships: "대인관계", finances: "금전",
+  executionAbility: "실행력", health: "건강·생활" };
 
 fetch("/api/test-faces").then(r => r.json()).then(list => {
   for (const name of list) {
@@ -189,7 +189,7 @@ function render(data) {
   tabs.innerHTML = ""; box.innerHTML = "";
   (data.interpretations || []).forEach((it, i) => {
     const btn = document.createElement("button");
-    btn.textContent = PERSONA_KO[it.persona];
+    btn.textContent = `${PERSONA_KO[it.personaType]} #${it.printCode}`;
     btn.onclick = () => {
       [...tabs.children].forEach(b => b.classList.remove("on"));
       btn.classList.add("on");
@@ -197,24 +197,36 @@ function render(data) {
     };
     tabs.appendChild(btn);
 
+    const r = it.reading, ft = r.faceType, lf = r.lifeFlow;
     const div = document.createElement("div");
     div.className = i === 0 ? "" : "hidden";
-    const lg = it.life_graph_reading;
-    div.innerHTML = it.sections.map(s => `
+    div.innerHTML = `
       <div class="section">
-        <h4>${CAT_KO[s.category]} — ${s.headline}</h4>
-        <div class="ev">근거: ${s.evidence.primary}</div>
-        <p>${s.body}</p>
-        <div class="advice">조언 · ${s.advice}</div>
+        <h4>삼정 — ${ft.threeSections.headline}</h4>
+        <p>${ft.threeSections.description}</p>
+      </div>
+      <div class="section">
+        <h4>오행 — ${ft.fiveElements.headline}</h4>
+        <p>${ft.fiveElements.description}</p>
+      </div>` +
+      Object.keys(CAT_KO).map(cat => `
+      <div class="section">
+        <h4>${CAT_KO[cat]} — ${r[cat].headline}</h4>
+        <p>${r[cat].description}</p>
+        <div class="advice">조언 · ${r[cat].advice}</div>
       </div>`).join("") + `
       <div class="section">
-        <h4>인생그래프 — ${lg.summary}</h4>
-        <p>초년 「${lg.early.headline}」 ${lg.early.body}</p>
-        <p>중년 「${lg.mid.headline}」 ${lg.mid.body}</p>
-        <p>말년 「${lg.late.headline}」 ${lg.late.body}</p>
-        <div class="advice">조언 · ${lg.advice}</div>
+        <h4>종합운 — ${r.overallFortune.headline}</h4>
+        <p>${r.overallFortune.description}</p>
       </div>
-      <div class="final-line">${it.final_line}</div>`;
+      <div class="section">
+        <h4>인생그래프 — ${lf.headline}</h4>
+        <p>초년 「${lf.stages.early.headline}」 ${lf.stages.early.description}</p>
+        <p>중년 「${lf.stages.middle.headline}」 ${lf.stages.middle.description}</p>
+        <p>말년 「${lf.stages.later.headline}」 ${lf.stages.later.description}</p>
+        <div class="advice">조언 · ${lf.advice}</div>
+      </div>
+      <div class="final-line">${r.closingMessage.description}</div>`;
     box.appendChild(div);
   });
   if (tabs.firstChild) tabs.firstChild.classList.add("on");

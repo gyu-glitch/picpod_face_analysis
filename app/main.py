@@ -17,8 +17,9 @@ from fastapi.responses import FileResponse, Response
 from . import llm
 from .landmarks import FaceDetectionError
 from .life_graph import build_svg
+from .persona import PERSONA_FROM_KIOSK, PERSONA_KIOSK
 from .pipeline import analyze_image
-from .schemas import FaceAnalysis, PersonaInterpretation
+from .schemas import FaceAnalysis
 
 app = FastAPI(title="픽팟 관상 분석", version="0.1.0")
 
@@ -72,15 +73,33 @@ async def analyze(file: UploadFile = File(...)):
     return analysis
 
 
-@app.post("/api/interpret", response_model=PersonaInterpretation)
-async def interpret(analysis_json: str = Form(...), persona: str = Form(...)):
-    if persona not in ("KIND", "T", "ROAST"):
-        raise HTTPException(400, "persona는 KIND | T | ROAST 중 하나여야 합니다.")
+def _normalize_persona(p: str) -> str:
+    """KIND/T/ROAST(내부) 또는 kind/factos/spicy(키오스크) 표기 모두 허용."""
+    p = p.strip()
+    if p.upper() in PERSONA_KIOSK:
+        return p.upper()
+    if p.lower() in PERSONA_FROM_KIOSK:
+        return PERSONA_FROM_KIOSK[p.lower()]
+    raise HTTPException(400, f"알 수 없는 페르소나: {p}")
+
+
+@app.post("/api/interpret")
+async def interpret(
+    analysis_json: str = Form(...),
+    persona: str = Form(...),
+    model: str = Form(""),
+    session_id: str = Form(""),
+):
+    """공통 분석 JSON + 페르소나 → 키오스크 소비 포맷(KioskData_*.json)."""
+    p = _normalize_persona(persona)
+    if model and model not in ALLOWED_MODELS:
+        raise HTTPException(400, f"지원하지 않는 모델: {model}")
     analysis = json.loads(analysis_json)
     try:
-        return llm.generate_persona(persona, analysis)
+        kiosk, claims = llm.generate_kiosk_data(p, analysis, model or None, session_id or None)
     except Exception as e:
         raise HTTPException(502, f"LLM 생성 실패: {e}")
+    return {"kiosk_data": kiosk, "claims": claims}
 
 
 @app.post("/api/analyze-full")
@@ -109,13 +128,13 @@ async def analyze_full(
         raise HTTPException(422, str(e))
     analysis.warnings.append(DISCLAIMER)
 
-    requested = [p.strip().upper() for p in personas.split(",") if p.strip()]
-    interpretations = []
+    requested = [_normalize_persona(p) for p in personas.split(",") if p.strip()]
+    interpretations, claims = [], {}
     for p in requested:
-        if p not in ("KIND", "T", "ROAST"):
-            raise HTTPException(400, f"알 수 없는 페르소나: {p}")
-        interpretations.append(llm.generate_persona(p, analysis.model_dump(), model or None))
-    return {"analysis": analysis, "interpretations": interpretations}
+        kiosk, c = llm.generate_kiosk_data(p, analysis.model_dump(), model or None)
+        interpretations.append(kiosk)
+        claims[PERSONA_KIOSK[p]] = c
+    return {"analysis": analysis, "interpretations": interpretations, "claims": claims}
 
 
 @app.get("/api/life-graph-svg")
