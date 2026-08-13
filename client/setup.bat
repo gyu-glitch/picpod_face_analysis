@@ -43,11 +43,10 @@ echo [3/4] Config
 if exist config.json (
   echo       config.json already exists - keeping it.
 ) else (
-  set /p SERVER_IP=      Analysis server IP (e.g. 100.88.205.178):
-  set /p TARGET_DIR=      Result folder (empty = .\readings):
-  if "!TARGET_DIR!"=="" set TARGET_DIR=%~dp0readings
-  set TARGET_ESC=!TARGET_DIR:\=/!
-  > config.json echo { "server": "http://!SERVER_IP!:8123", "target_dir": "!TARGET_ESC!", "poll_interval": 2, "flatten": false }
+  set TARGET_ESC=%~dp0readings
+  set TARGET_ESC=!TARGET_ESC:\=/!
+  > config.json echo { "server": "http://100.88.205.178:8123", "target_dir": "!TARGET_ESC!", "poll_interval": 2, "flatten": false }
+  echo       Default config written. Edit config.json to change server/folder.
 )
 echo       OK
 

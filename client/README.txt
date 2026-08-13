@@ -2,9 +2,8 @@
 =====================================
 
 1. 이 폴더를 PC 아무 곳에나 복사 (예: C:\picpod_client)
-2. setup.bat 더블클릭
-   - 분석 서버 IP 입력: 100.88.205.178
-   - 결과 폴더 입력: 결과 JSON이 쌓일 폴더 (비우면 .\readings)
+2. setup.bat 더블클릭 — 입력 없이 자동 세팅됨
+   (서버 100.88.205.178, 결과 폴더 .\readings 기본값으로 config.json 생성)
 3. 끝. 바탕화면에 바로가기 2개가 생김
    - [PicPod Result Receiver] : 결과 자동 수신기 (부팅 시 자동 시작됨)
    - [PicPod Analysis GUI]    : 브라우저로 분석 화면 열기
@@ -15,5 +14,12 @@
   바뀌는데, 눌러도 됨 — 순서대로 자동 처리됨
 - 결과 JSON(KioskData_*.json)은 지정한 결과 폴더에 자동 저장됨
 
-설정 변경: config.json (서버 주소, 결과 폴더, flatten 등)
+설정 변경: config.json을 메모장으로 열어 수정 (서버 주소, 결과 폴더, flatten 등)
+           수정 후 수신기 재시작
+{
+  "server": "http://100.88.205.178:8123",   <- 분석 서버 주소
+  "target_dir": ".../readings",             <- 결과 JSON이 쌓일 폴더
+  "poll_interval": 2,                        <- 확인 주기(초)
+  "flatten": false                           <- true면 하위폴더 없이 저장
+}
 문제 시: 수신기 창의 오류 메시지 확인 → 서버 PC에서 서버실행.bat 켜져 있는지 확인
