@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>픽팟 관상 분석 — 테스트 GUI</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+  background: #14101f; color: #ece8f5; line-height: 1.55; padding: 24px 16px 60px; }
+.wrap { max-width: 1200px; margin: 0 auto; }
+h1 { font-size: 1.35rem; margin-bottom: 2px; }
+.sub { color: #9d90bd; font-size: .85rem; margin-bottom: 20px; }
+.grid { display: grid; grid-template-columns: 320px 1fr; gap: 18px; }
+@media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+.panel { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
+  border-radius: 14px; padding: 18px; }
+.panel h2 { font-size: 1rem; color: #cfc3ec; margin-bottom: 12px; }
+label { display: block; font-size: .82rem; color: #9d90bd; margin: 12px 0 4px; }
+select, input[type=file] { width: 100%; background: #241d36; color: #ece8f5;
+  border: 1px solid rgba(255,255,255,.18); border-radius: 8px; padding: 8px; font-size: .88rem; }
+.chk { display: flex; gap: 14px; margin-top: 4px; }
+.chk label { display: flex; align-items: center; gap: 5px; margin: 0; color: #ece8f5; font-size: .88rem; cursor: pointer; }
+button { width: 100%; margin-top: 18px; background: #7c5cd6; color: #fff; border: 0;
+  border-radius: 10px; padding: 12px; font-size: 1rem; font-weight: 700; cursor: pointer; }
+button:disabled { background: #4a3f6b; cursor: wait; }
+#preview { width: 100%; border-radius: 10px; margin-top: 12px; display: none; }
+.status { margin-top: 10px; font-size: .82rem; color: #f5d58a; min-height: 1.2em; white-space: pre-line; }
+.type-card { background: linear-gradient(135deg, #3b2a6b, #241d36); border-radius: 14px;
+  padding: 20px; margin-bottom: 16px; }
+.type-card .name { font-size: 1.6rem; font-weight: 800; }
+.type-card .tagline { color: #cfc3ec; margin-top: 4px; }
+.type-card .subtext { color: #9d90bd; font-size: .85rem; margin-top: 8px; }
+.type-card .code { float: right; font-size: .75rem; color: #776a97; }
+.scores { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px; }
+.bar-row { display: flex; align-items: center; gap: 8px; font-size: .8rem; margin: 3px 0; }
+.bar-row .lbl { width: 56px; color: #9d90bd; }
+.bar-row .track { flex: 1; height: 8px; background: rgba(255,255,255,.08); border-radius: 4px; }
+.bar-row .fill { height: 100%; border-radius: 4px; background: #a98ff5; }
+.bar-row .val { width: 28px; text-align: right; }
+.buckets { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 6px; font-size: .8rem; margin-bottom: 16px; }
+.buckets div { background: rgba(0,0,0,.25); border-radius: 8px; padding: 6px 10px; }
+.buckets b { color: #9d90bd; font-weight: 400; margin-right: 6px; }
+#graph-box { text-align: center; margin-bottom: 16px; }
+#graph-box svg { max-width: 460px; width: 100%; }
+.tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+.tabs button { width: auto; margin: 0; padding: 7px 16px; font-size: .85rem;
+  background: rgba(255,255,255,.08); font-weight: 400; }
+.tabs button.on { background: #7c5cd6; font-weight: 700; }
+.section { background: rgba(0,0,0,.25); border-radius: 10px; padding: 13px 16px; margin-bottom: 10px; }
+.section h4 { font-size: .9rem; color: #a98ff5; }
+.section .ev { font-size: .72rem; color: #776a97; margin-bottom: 6px; }
+.section p { font-size: .87rem; }
+.section .advice { color: #cfc3ec; font-size: .82rem; margin-top: 6px; }
+.final-line { border-left: 3px solid #7c5cd6; padding: 8px 12px; font-size: .95rem; margin-top: 6px; }
+.warn { color: #f5d58a; font-size: .78rem; margin-top: 12px; }
+.hidden { display: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>픽팟 관상 분석 — 테스트 GUI</h1>
+<p class="sub">MediaPipe → 오행·삼정 → 20유형 → EXAONE 페르소나 해석 · 개발 검증용</p>
+
+<div class="grid">
+  <div class="panel">
+    <h2>입력</h2>
+    <label>테스트 샘플</label>
+    <select id="sample"><option value="">— 직접 업로드 —</option></select>
+    <label>사진 업로드</label>
+    <input type="file" id="file" accept="image/*">
+    <img id="preview" alt="미리보기">
+    <label>모델</label>
+    <select id="model">
+      <option value="exaone3.5:7.8b">EXAONE 3.5 7.8B (품질)</option>
+      <option value="exaone3.5:2.4b">EXAONE 3.5 2.4B (속도)</option>
+    </select>
+    <label>페르소나</label>
+    <div class="chk">
+      <label><input type="checkbox" value="KIND" checked> 다정다감</label>
+      <label><input type="checkbox" value="T"> 완전T</label>
+      <label><input type="checkbox" value="ROAST" checked> 독설가</label>
+    </div>
+    <button id="run">분석 시작</button>
+    <div class="status" id="status"></div>
+  </div>
+
+  <div class="panel hidden" id="result">
+    <div class="type-card">
+      <span class="code" id="r-code"></span>
+      <div class="name" id="r-name"></div>
+      <div class="tagline" id="r-tagline"></div>
+      <div class="subtext" id="r-subtext"></div>
+    </div>
+    <div class="scores">
+      <div><h2>오행</h2><div id="r-ohaeng"></div></div>
+      <div><h2>삼정</h2><div id="r-samjeong"></div></div>
+    </div>
+    <h2>인생그래프</h2>
+    <div id="graph-box"></div>
+    <h2>측정 라벨 18</h2>
+    <div class="buckets" id="r-buckets"></div>
+    <h2>페르소나 해석</h2>
+    <div class="tabs" id="tabs"></div>
+    <div id="r-personas"></div>
+    <div class="warn" id="r-warn"></div>
+  </div>
+</div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const OHAENG_KO = { wood: "목(木)", fire: "화(火)", earth: "토(土)", metal: "금(金)", water: "수(水)" };
+const SJ_KO = { upper: "상정", mid: "중정", lower: "하정" };
+const PERSONA_KO = { KIND: "다정다감", T: "완전T", ROAST: "독설가" };
+const CAT_KO = { temperament: "기질", relationship: "대인관계", money: "금전",
+  execution: "실행력", health: "건강·생활" };
+
+fetch("/api/test-faces").then(r => r.json()).then(list => {
+  for (const name of list) {
+    const o = document.createElement("option");
+    o.value = o.textContent = name;
+    $("sample").appendChild(o);
+  }
+});
+
+$("file").onchange = () => {
+  const f = $("file").files[0];
+  if (f) { $("preview").src = URL.createObjectURL(f); $("preview").style.display = "block"; $("sample").value = ""; }
+};
+$("sample").onchange = () => {
+  if ($("sample").value) {
+    $("file").value = "";
+    $("preview").src = "/api/test-faces/" + encodeURIComponent($("sample").value);
+    $("preview").style.display = "block";
+  }
+};
+
+function bars(el, data, keys) {
+  el.innerHTML = keys.map(k => `
+    <div class="bar-row"><span class="lbl">${k.label}</span>
+    <div class="track"><div class="fill" style="width:${data[k.key]}%"></div></div>
+    <span class="val">${data[k.key]}</span></div>`).join("");
+}
+
+$("run").onclick = async () => {
+  const personas = [...document.querySelectorAll(".chk input:checked")].map(c => c.value);
+  const fd = new FormData();
+  if ($("file").files[0]) fd.append("file", $("file").files[0]);
+  else if ($("sample").value) fd.append("sample", $("sample").value);
+  else { $("status").textContent = "사진을 선택하세요."; return; }
+  fd.append("personas", personas.join(","));
+  fd.append("model", $("model").value);
+
+  $("run").disabled = true;
+  const t0 = performance.now();
+  $("status").textContent = "분석 중… (페르소나당 3~15초)";
+  try {
+    const resp = await fetch("/api/analyze-full", { method: "POST", body: fd });
+    if (!resp.ok) throw new Error((await resp.json()).detail || resp.status);
+    render(await resp.json());
+    $("status").textContent = `완료 — ${((performance.now() - t0) / 1000).toFixed(1)}초`;
+  } catch (e) {
+    $("status").textContent = "오류: " + e.message;
+  }
+  $("run").disabled = false;
+};
+
+function render(data) {
+  const a = data.analysis;
+  $("result").classList.remove("hidden");
+  $("r-code").textContent = a.type.code;
+  $("r-name").textContent = a.type.name;
+  $("r-tagline").textContent = "“" + a.type.tagline + "”";
+  $("r-subtext").textContent = a.type.subtext;
+  bars($("r-ohaeng"), a.ohaeng, Object.keys(OHAENG_KO).map(k => ({ key: k, label: OHAENG_KO[k] })));
+  bars($("r-samjeong"), a.samjeong, Object.keys(SJ_KO).map(k => ({ key: k, label: SJ_KO[k] })));
+  $("r-samjeong").innerHTML += `<div class="bar-row"><span class="lbl">지배</span><b>${a.samjeong.dominant}</b></div>`;
+  $("r-buckets").innerHTML = Object.entries(a.buckets)
+    .map(([k, v]) => `<div><b>${k}</b>${v}</div>`).join("");
+  $("r-warn").textContent = (a.warnings || []).join(" · ");
+
+  const g = a.life_graph;
+  fetch(`/api/life-graph-svg?session_id=${a.analysis_id}&early=${g.early}&mid=${g.mid}&late=${g.late}`)
+    .then(r => r.text()).then(svg => { $("graph-box").innerHTML = svg; });
+
+  const tabs = $("tabs"), box = $("r-personas");
+  tabs.innerHTML = ""; box.innerHTML = "";
+  (data.interpretations || []).forEach((it, i) => {
+    const btn = document.createElement("button");
+    btn.textContent = PERSONA_KO[it.persona];
+    btn.onclick = () => {
+      [...tabs.children].forEach(b => b.classList.remove("on"));
+      btn.classList.add("on");
+      [...box.children].forEach((d, j) => d.classList.toggle("hidden", j !== i));
+    };
+    tabs.appendChild(btn);
+
+    const div = document.createElement("div");
+    div.className = i === 0 ? "" : "hidden";
+    const lg = it.life_graph_reading;
+    div.innerHTML = it.sections.map(s => `
+      <div class="section">
+        <h4>${CAT_KO[s.category]} — ${s.headline}</h4>
+        <div class="ev">근거: ${s.evidence.primary}</div>
+        <p>${s.body}</p>
+        <div class="advice">조언 · ${s.advice}</div>
+      </div>`).join("") + `
+      <div class="section">
+        <h4>인생그래프 — ${lg.summary}</h4>
+        <p>초년 「${lg.early.headline}」 ${lg.early.body}</p>
+        <p>중년 「${lg.mid.headline}」 ${lg.mid.body}</p>
+        <p>말년 「${lg.late.headline}」 ${lg.late.body}</p>
+        <div class="advice">조언 · ${lg.advice}</div>
+      </div>
+      <div class="final-line">${it.final_line}</div>`;
+    box.appendChild(div);
+  });
+  if (tabs.firstChild) tabs.firstChild.classList.add("on");
+}
+</script>
+</body>
+</html>

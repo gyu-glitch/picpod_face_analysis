@@ -1,0 +1,92 @@
+# 수치 특징 → 한국어 라벨 버킷화 임계값.
+# 라벨 문구는 celeb_comparison.html(2026-07-28 실측 리포트)의 표현을 그대로 사용.
+# thresholds: [하한, 상한] — 값 < 하한 → labels[0], < 상한 → labels[1], 이상 → labels[2]
+#
+# 임계값은 리포트의 연예인 5장 정답 라벨을 역산해 캘리브레이션 (2026-08-13).
+# 검증 결과: 18특징 중 16개 5/5 일치, 눈 사이 간격·콧대 길이는 측정 방식 차이로 3~4/5.
+# ⚠ 5장 표본이므로 현장 테스트 촬영 100건으로 재조정할 것.
+
+face_ratio:
+  display: "얼굴 비율"
+  thresholds: [1.15, 1.30]
+  labels: ["얼굴이 둥글고 넓은 편", "얼굴 비율이 균형 잡힘", "얼굴이 갸름하고 긴 편"]
+
+jaw_width:
+  display: "턱 폭"
+  thresholds: [0.862, 0.900]
+  labels: ["턱 폭이 좁고 갸름한 편", "턱 폭이 보통", "턱 폭이 넓고 각진 인상"]
+
+jaw_length:
+  display: "턱 끝 모양"
+  thresholds: [0.13, 0.23]
+  labels: ["턱 끝이 짧고 아담한 편", "턱 끝이 보통", "턱 끝이 길고 뚜렷한 편"]
+
+eye_height:
+  display: "눈 크기(세로 비율)"
+  thresholds: [0.24, 0.31]
+  labels: ["눈이 가늘고 차분한 인상", "눈 크기가 보통", "눈이 크고 시원한 편"]
+
+eye_gap:
+  display: "눈 사이 간격"
+  thresholds: [1.30, 1.39]
+  labels: ["두 눈 사이가 가까운 편", "두 눈 사이 간격이 보통", "두 눈 사이가 넓은 편"]
+
+eye_tilt:
+  display: "눈꼬리 각도"
+  thresholds: [0.0, 4.0]
+  labels: ["눈꼬리가 내려간 순한 인상", "눈꼬리 각도가 보통", "눈꼬리가 올라간 편"]
+
+brow_arch:
+  display: "눈썹 아치"
+  thresholds: [0.20, 0.30]
+  labels: ["눈썹이 일자로 곧은 편", "눈썹 곡선이 보통", "눈썹이 아치형으로 둥근 편"]
+
+nose_length:
+  display: "콧대 길이"
+  thresholds: [0.27, 0.30]
+  labels: ["콧대가 짧고 귀여운 인상", "콧대 길이가 보통", "콧대가 긴 편"]
+
+nose_width:
+  display: "콧방울 너비"
+  thresholds: [0.27, 0.31]
+  labels: ["콧방울이 좁고 코가 오똑한 인상", "콧방울 너비가 보통", "콧방울이 넓고 복스러운 인상"]
+
+philtrum:
+  display: "인중 길이"
+  thresholds: [0.055, 0.075]
+  labels: ["인중이 짧고 또렷한 편", "인중 길이가 보통", "인중이 길고 뚜렷한 편"]
+
+lip_thickness:
+  display: "입술 두께"
+  thresholds: [0.080, 0.095]
+  labels: ["입술이 얇고 단정한 편", "입술 두께가 보통", "입술이 도톰한 편"]
+
+lip_ratio:
+  display: "위아래 입술 비율"
+  thresholds: [0.50, 0.64]
+  labels: ["아랫입술이 도톰한 편", "위아래 입술이 균형 잡힘", "윗입술이 아랫입술만큼 도톰함"]
+
+mouth_width:
+  display: "입 크기"
+  thresholds: [0.39, 0.45]
+  labels: ["입이 작은 편", "입 크기가 보통", "입이 크고 시원한 편"]
+
+mouth_corner:
+  display: "입꼬리"
+  thresholds: [-0.09, 0.04]
+  labels: ["입꼬리가 차분하게 내려간 편", "입꼬리가 보통", "입꼬리가 올라간 편"]
+
+jaw_angle:
+  display: "턱선 각도"
+  thresholds: [137.0, 141.5]
+  labels: ["턱선이 뚜렷하고 각진 편", "턱선이 보통", "턱선이 부드럽고 완만한 편"]
+
+forehead_width:
+  display: "이마 너비"
+  thresholds: [0.820, 0.860]
+  labels: ["이마가 좁은 편", "이마 너비가 보통", "이마가 넓고 시원한 편"]
+
+symmetry:
+  display: "좌우 균형"
+  thresholds: [0.090, 0.163]
+  labels: ["얼굴 좌우가 매우 균형 잡힘", "얼굴 좌우 균형이 보통", "얼굴 좌우에 개성 있는 비대칭이 있음"]
