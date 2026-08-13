@@ -1,8 +1,8 @@
 #!/bin/bash
 # ============================================================
 #  PicPod face-analysis client setup (macOS)
-#  First run: open Terminal, drag this file in, press Enter
-#  (or: bash setup_mac.command) — afterwards double-click works.
+#  Just double-click. If blocked by Gatekeeper:
+#  right-click -> Open -> Open (first time only).
 # ============================================================
 set -e
 cd "$(dirname "$0")"
@@ -15,10 +15,13 @@ echo ""
 
 # ---------- 1. python3 ----------
 echo "[1/4] Checking python3..."
-if ! command -v python3 >/dev/null 2>&1; then
-  echo "[ERROR] python3 not found."
-  echo "        Run:  xcode-select --install   (or install from python.org)"
-  echo "        Then run this script again."
+if ! command -v python3 >/dev/null 2>&1 || ! python3 -c "import sys" >/dev/null 2>&1; then
+  echo "python3 is missing - opening the installer dialog..."
+  xcode-select --install 2>/dev/null || true
+  echo ""
+  echo "  A window should appear. Click [Install] and wait for it to finish,"
+  echo "  then double-click this file again."
+  read -r -p "Press Enter to close..."
   exit 1
 fi
 echo "      OK ($(python3 --version))"
