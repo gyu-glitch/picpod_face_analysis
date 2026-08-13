@@ -38,15 +38,14 @@ python -m pip install --upgrade pip --quiet
 python -m pip install --upgrade requests --quiet
 echo       OK
 
-rem ---------- 3. Config ----------
+rem ---------- 3. Config + result folder ----------
 echo [3/4] Config
+if not exist result mkdir result
 if exist config.json (
   echo       config.json already exists - keeping it.
 ) else (
-  set TARGET_ESC=%~dp0readings
-  set TARGET_ESC=!TARGET_ESC:\=/!
-  > config.json echo { "server": "http://100.88.205.178:8123", "target_dir": "!TARGET_ESC!", "poll_interval": 2, "flatten": false }
-  echo       Default config written. Edit config.json to change server/folder.
+  > config.json echo { "server": "http://100.88.205.178:8123", "poll_interval": 2, "flatten": false, "target_dir": "" }
+  echo       Default config written. Edit config.json to change server.
 )
 echo       OK
 
@@ -58,9 +57,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command ^
   "$u=$w.SpecialFolders('Startup');" ^
   "$cfg=Get-Content '%~dp0config.json' -Raw | ConvertFrom-Json;" ^
   "$s=$w.CreateShortcut((Join-Path $d 'PicPod Result Receiver.lnk'));" ^
-  "$s.TargetPath='%~dp0수신기실행.bat'; $s.WorkingDirectory='%~dp0'; $s.Save();" ^
+  "$s.TargetPath='%~dp0run.bat'; $s.WorkingDirectory='%~dp0'; $s.Save();" ^
   "$s=$w.CreateShortcut((Join-Path $u 'PicPod Result Receiver.lnk'));" ^
-  "$s.TargetPath='%~dp0수신기실행.bat'; $s.WorkingDirectory='%~dp0'; $s.Save();" ^
+  "$s.TargetPath='%~dp0run.bat'; $s.WorkingDirectory='%~dp0'; $s.Save();" ^
   "$s=$w.CreateShortcut((Join-Path $d 'PicPod Analysis GUI.url'));" ^
   "$s.TargetPath=$cfg.server; $s.Save()"
 echo       OK

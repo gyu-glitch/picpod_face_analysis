@@ -3,7 +3,6 @@
 
 1. 이 폴더를 PC 아무 곳에나 복사 (예: C:\picpod_client)
 2. setup.bat 더블클릭 — 입력 없이 자동 세팅됨
-   (서버 100.88.205.178, 결과 폴더 .\readings 기본값으로 config.json 생성)
 3. 끝. 바탕화면에 바로가기 2개가 생김
    - [PicPod Result Receiver] : 결과 자동 수신기 (부팅 시 자동 시작됨)
    - [PicPod Analysis GUI]    : 브라우저로 분석 화면 열기
@@ -12,14 +11,14 @@
 - GUI에서 사진 업로드 → 분석 시작
 - 다른 사람이 분석 중이면 버튼이 분홍색 [분석 대기 추가 (N명 사용중)]으로
   바뀌는데, 눌러도 됨 — 순서대로 자동 처리됨
-- 결과 JSON(KioskData_*.json)은 지정한 결과 폴더에 자동 저장됨
+- 결과 JSON(KioskData_*.json)은 이 폴더 안 result\ 에 자동 저장됨
+  (폴더를 통째로 옮겨도 실행할 때마다 위치를 감지해서 그 안의 result\ 에 저장)
 
-설정 변경: config.json을 메모장으로 열어 수정 (서버 주소, 결과 폴더, flatten 등)
-           수정 후 수신기 재시작
+설정 변경: config.json을 메모장으로 열어 수정, 수정 후 수신기 재시작
 {
   "server": "http://100.88.205.178:8123",   <- 분석 서버 주소
-  "target_dir": ".../readings",             <- 결과 JSON이 쌓일 폴더
   "poll_interval": 2,                        <- 확인 주기(초)
-  "flatten": false                           <- true면 하위폴더 없이 저장
+  "flatten": false,                          <- true면 하위폴더 없이 저장
+  "target_dir": ""                           <- (옵션) 특정 폴더에 저장하고 싶을 때만 경로 입력
 }
 문제 시: 수신기 창의 오류 메시지 확인 → 서버 PC에서 서버실행.bat 켜져 있는지 확인

@@ -4,12 +4,15 @@
 지정 폴더에 실시간으로 내려받는다. 브라우저에서 서버 GUI로 분석을 돌리면
 이 프로그램이 돌고 있는 PC의 대상 폴더에 파일이 자동으로 생긴다.
 
+저장 위치: 이 스크립트가 있는 폴더의 result\ — 실행 시마다 현재 위치를
+감지하므로 폴더를 통째로 옮겨도 그대로 동작한다.
+
 설정: 같은 폴더의 config.json
   {
     "server": "http://100.88.205.178:8123",   ← 분석 서버(GPU PC) 주소
-    "target_dir": "C:/kiosk_project/data/readings",  ← 결과가 쌓일 폴더
     "poll_interval": 2,                        ← 폴링 주기(초)
-    "flatten": false                           ← true면 배치 하위폴더 없이 저장
+    "flatten": false,                          ← true면 배치 하위폴더 없이 저장
+    "target_dir": ""                           ← (옵션) 다른 폴더에 저장하고 싶을 때만 지정
   }
 
 수신 상태는 state.json에 기록되어 재시작해도 중복 다운로드하지 않는다.
@@ -27,9 +30,9 @@ STATE_PATH = BASE_DIR / "state.json"
 
 DEFAULT_CONFIG = {
     "server": "http://100.88.205.178:8123",
-    "target_dir": str(BASE_DIR / "readings"),
     "poll_interval": 2,
     "flatten": False,
+    "target_dir": "",  # 비우면 스크립트 위치 기준 result\ (실행 시마다 감지)
 }
 
 
@@ -47,7 +50,8 @@ def main():
         print(f"[설정] config.json 생성됨 — 서버 주소/대상 폴더 확인 후 재시작하세요: {CONFIG_PATH}")
 
     server = cfg["server"].rstrip("/")
-    target = Path(cfg["target_dir"])
+    # target_dir 미지정 시 현재 스크립트 위치 기준 result\ — 폴더를 옮겨도 따라간다
+    target = Path(cfg["target_dir"]) if cfg.get("target_dir") else BASE_DIR / "result"
     target.mkdir(parents=True, exist_ok=True)
     state = load_json(STATE_PATH, {"last_batch": ""})
 

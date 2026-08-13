@@ -57,6 +57,12 @@ button:disabled { background: #4a3f6b; cursor: wait; }
 .final-line { border-left: 3px solid #7c5cd6; padding: 8px 12px; font-size: .95rem; margin-top: 6px; }
 .warn { color: #f5d58a; font-size: .78rem; margin-top: 12px; }
 .hidden { display: none; }
+#fb-box { margin-top: 18px; border-top: 1px solid rgba(255,255,255,.12); padding-top: 14px; }
+#fb-text { width: 100%; height: 72px; background: #241d36; color: #ece8f5;
+  border: 1px solid rgba(255,255,255,.18); border-radius: 8px; padding: 8px; resize: vertical;
+  font-family: inherit; font-size: .88rem; }
+#fb-send { width: auto; margin-top: 8px; padding: 8px 22px; font-size: .88rem; }
+#fb-status { display: inline-block; margin-left: 10px; font-size: .82rem; color: #f5d58a; }
 </style>
 </head>
 <body>
@@ -106,6 +112,11 @@ button:disabled { background: #4a3f6b; cursor: wait; }
     <div class="tabs" id="tabs"></div>
     <div id="r-personas"></div>
     <div class="warn" id="r-warn"></div>
+    <div id="fb-box">
+      <h2>피드백</h2>
+      <textarea id="fb-text" placeholder="결과에 대한 의견을 적어주세요 (개발 참고용으로 서버에 저장됩니다)"></textarea>
+      <button id="fb-send">피드백 전송</button><span id="fb-status"></span>
+    </div>
   </div>
 </div>
 </div>
@@ -200,8 +211,29 @@ $("run").onclick = async () => {
   pollStatus();
 };
 
+let currentBatch = "";
+
+$("fb-send") && ($("fb-send").onclick = async () => {
+  const text = $("fb-text").value.trim();
+  if (!text) { $("fb-status").textContent = "내용을 입력하세요."; return; }
+  if (!currentBatch) { $("fb-status").textContent = "먼저 분석을 실행하세요."; return; }
+  const fd = new FormData();
+  fd.append("batch", currentBatch);
+  fd.append("text", text);
+  try {
+    const resp = await fetch("/api/feedback", { method: "POST", body: fd });
+    if (!resp.ok) throw new Error((await resp.json()).detail || resp.status);
+    $("fb-text").value = "";
+    $("fb-status").textContent = "전송됨 — 고마워요!";
+  } catch (e) {
+    $("fb-status").textContent = "전송 실패: " + e.message;
+  }
+});
+
 function render(data) {
   const a = data.analysis;
+  currentBatch = data.batch || "";
+  $("fb-status").textContent = "";
   $("result").classList.remove("hidden");
   $("r-code").textContent = a.type.code;
   $("r-name").textContent = a.type.name;

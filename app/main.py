@@ -36,8 +36,13 @@ _analyze_lock = asyncio.Lock()
 _queue_state = {"busy": False, "waiting": 0}
 
 
-def _save_results(analysis: FaceAnalysis, interpretations: list[dict]) -> str:
-    """분석 결과를 results/에 영속화 — 클라이언트 수신기가 폴링해 가져간다."""
+def _save_results(analysis: FaceAnalysis, interpretations: list[dict],
+                  raw_image: bytes | None = None) -> str:
+    """분석 결과를 results/에 영속화 — 클라이언트 수신기가 폴링해 가져간다.
+
+    원본 사진(photo.jpg)도 함께 저장한다 (개발 참고용, 서버 보관 전용).
+    수신기는 *.json만 내려받으므로 사진·피드백은 클라이언트로 나가지 않는다.
+    """
     from datetime import datetime
     batch = f"{datetime.now():%Y%m%d_%H%M%S}_{analysis.analysis_id[:8]}"
     out = RESULTS_DIR / batch
@@ -47,6 +52,8 @@ def _save_results(analysis: FaceAnalysis, interpretations: list[dict]) -> str:
     for kiosk in interpretations:
         (out / f"KioskData_{kiosk['personaType']}.json").write_text(
             json.dumps(kiosk, ensure_ascii=False, indent=2), encoding="utf-8")
+    if raw_image:
+        (out / "photo.jpg").write_bytes(raw_image)
     return batch
 
 
@@ -138,14 +145,15 @@ async def analyze_full(
     model: str = Form(""),
 ):
     if file is not None:
-        img = _decode_upload(await file.read())
+        raw = await file.read()
     elif sample:
         path = (FACES_DIR / sample).resolve()
         if not path.is_file() or path.parent != FACES_DIR.resolve():
             raise HTTPException(404, "샘플 없음")
-        img = cv2.imread(str(path))
+        raw = path.read_bytes()
     else:
         raise HTTPException(400, "file 또는 sample 중 하나가 필요합니다.")
+    img = _decode_upload(raw)
 
     if model and model not in ALLOWED_MODELS:
         raise HTTPException(400, f"지원하지 않는 모델: {model}")
@@ -172,7 +180,7 @@ async def analyze_full(
                         llm.generate_kiosk_data, p, analysis.model_dump(), model or None)
                     interpretations.append(kiosk)
                     claims[PERSONA_KIOSK[p]] = c
-                batch = _save_results(analysis, interpretations)
+                batch = _save_results(analysis, interpretations, raw)
             finally:
                 _queue_state["busy"] = False
     finally:
@@ -181,6 +189,21 @@ async def analyze_full(
 
     return {"analysis": analysis, "interpretations": interpretations,
             "claims": claims, "batch": batch}
+
+
+@app.post("/api/feedback")
+async def feedback(batch: str = Form(...), text: str = Form(...)):
+    """GUI 사용자 피드백 — 해당 결과 배치 폴더에 보관 (개발 참고용)."""
+    from datetime import datetime
+    out = (RESULTS_DIR / batch).resolve()
+    if not out.is_dir() or out.parent != RESULTS_DIR.resolve():
+        raise HTTPException(404, "결과 배치 없음")
+    text = text.strip()
+    if not text:
+        raise HTTPException(400, "내용이 비어 있습니다.")
+    with open(out / "feedback.txt", "a", encoding="utf-8") as f:
+        f.write(f"[{datetime.now():%Y-%m-%d %H:%M:%S}]\n{text[:2000]}\n\n")
+    return {"ok": True}
 
 
 @app.get("/api/results")
