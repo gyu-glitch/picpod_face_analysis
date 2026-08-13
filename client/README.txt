@@ -1,11 +1,20 @@
 픽팟 관상 분석 — 클라이언트 설치 안내
 =====================================
 
+■ Windows
 1. 이 폴더를 PC 아무 곳에나 복사 (예: C:\picpod_client)
 2. setup.bat 더블클릭 — 입력 없이 자동 세팅됨
 3. 끝. 바탕화면에 바로가기 2개가 생김
    - [PicPod Result Receiver] : 결과 자동 수신기 (부팅 시 자동 시작됨)
    - [PicPod Analysis GUI]    : 브라우저로 분석 화면 열기
+
+■ macOS
+1. 이 폴더를 Mac 아무 곳에나 복사
+2. 터미널을 열고:  bash <폴더경로>/setup_mac.command
+   (폴더를 터미널 창에 드래그하면 경로가 입력됨. 최초 1회만 터미널 필요)
+3. 끝. 수신기가 백그라운드로 시작되고(로그인 시 자동 시작),
+   바탕화면에 [PicPod Result Receiver], [PicPod Analysis GUI] 생김
+   * 폴더를 옮기면 setup_mac.command를 다시 실행할 것
 
 사용법
 - GUI에서 사진 업로드 → 분석 시작
