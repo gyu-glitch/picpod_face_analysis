@@ -6,6 +6,7 @@ POST /api/analyze-full     이미지 → 공통 분석 + 페르소나 해석 일
 GET  /api/life-graph-svg   sessionId + 삼정 점수 → SVG
 GET  /health
 """
+import asyncio
 import json
 from pathlib import Path
 
@@ -28,6 +29,11 @@ STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
 FACES_DIR = Path(__file__).resolve().parent.parent / "tests" / "faces"
 RESULTS_DIR = Path(__file__).resolve().parent.parent / "results"
 ALLOWED_MODELS = {"exaone3.5:2.4b", "exaone3.5:7.8b"}
+
+# 분석은 한 번에 1건 — 나머지 요청은 락 대기열에 순서대로 큐잉된다.
+# LLM 호출은 to_thread로 이벤트 루프 밖에서 돌므로 /health는 대기 중에도 응답한다.
+_analyze_lock = asyncio.Lock()
+_queue_state = {"busy": False, "waiting": 0}
 
 
 def _save_results(analysis: FaceAnalysis, interpretations: list[dict]) -> str:
@@ -54,7 +60,14 @@ def _decode_upload(data: bytes) -> np.ndarray:
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "ollama": llm.check_health(), "model": llm.MODEL}
+    return {"status": "ok", "ollama": llm.check_health(), "model": llm.MODEL,
+            "busy": _queue_state["busy"], "waiting": _queue_state["waiting"]}
+
+
+@app.get("/api/status")
+def status():
+    """가벼운 사용중/대기열 상태 — GUI 폴링용 (ollama 헬스체크 없음)."""
+    return {"busy": _queue_state["busy"], "waiting": _queue_state["waiting"]}
 
 
 @app.get("/")
@@ -137,19 +150,35 @@ async def analyze_full(
     if model and model not in ALLOWED_MODELS:
         raise HTTPException(400, f"지원하지 않는 모델: {model}")
 
-    try:
-        analysis = analyze_image(img)
-    except FaceDetectionError as e:
-        raise HTTPException(422, str(e))
-    analysis.warnings.append(DISCLAIMER)
-
     requested = [_normalize_persona(p) for p in personas.split(",") if p.strip()]
-    interpretations, claims = [], {}
-    for p in requested:
-        kiosk, c = llm.generate_kiosk_data(p, analysis.model_dump(), model or None)
-        interpretations.append(kiosk)
-        claims[PERSONA_KIOSK[p]] = c
-    batch = _save_results(analysis, interpretations)
+
+    _queue_state["waiting"] += 1
+    got_lock = False
+    try:
+        async with _analyze_lock:
+            _queue_state["waiting"] -= 1
+            got_lock = True
+            _queue_state["busy"] = True
+            try:
+                try:
+                    analysis = await asyncio.to_thread(analyze_image, img)
+                except FaceDetectionError as e:
+                    raise HTTPException(422, str(e))
+                analysis.warnings.append(DISCLAIMER)
+
+                interpretations, claims = [], {}
+                for p in requested:
+                    kiosk, c = await asyncio.to_thread(
+                        llm.generate_kiosk_data, p, analysis.model_dump(), model or None)
+                    interpretations.append(kiosk)
+                    claims[PERSONA_KIOSK[p]] = c
+                batch = _save_results(analysis, interpretations)
+            finally:
+                _queue_state["busy"] = False
+    finally:
+        if not got_lock:  # 락 대기 중 취소·오류로 이탈한 경우 보정
+            _queue_state["waiting"] -= 1
+
     return {"analysis": analysis, "interpretations": interpretations,
             "claims": claims, "batch": batch}
 
