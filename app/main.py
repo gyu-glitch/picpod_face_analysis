@@ -176,8 +176,14 @@ async def analyze_full(
 
                 interpretations, claims = [], {}
                 for p in requested:
-                    kiosk, c = await asyncio.to_thread(
-                        llm.generate_kiosk_data, p, analysis.model_dump(), model or None)
+                    try:
+                        kiosk, c = await asyncio.to_thread(
+                            llm.generate_kiosk_data, p, analysis.model_dump(), model or None)
+                    except HTTPException:
+                        raise
+                    except Exception as e:
+                        # LLM 실패를 500이 아닌 502 + 읽을 수 있는 메시지로
+                        raise HTTPException(502, f"{PERSONA_KIOSK[p]} 해석 생성 실패: {e}")
                     interpretations.append(kiosk)
                     claims[PERSONA_KIOSK[p]] = c
                 batch = _save_results(analysis, interpretations, raw)

@@ -199,7 +199,13 @@ $("run").onclick = async () => {
     : "분석 중… (페르소나당 3~15초)";
   try {
     const resp = await fetch("/api/analyze-full", { method: "POST", body: fd });
-    if (!resp.ok) throw new Error((await resp.json()).detail || resp.status);
+    if (!resp.ok) {
+      // 서버가 JSON이 아닌 본문(예: Internal Server Error)을 줄 수도 있다
+      const raw = await resp.text();
+      let msg;
+      try { msg = JSON.parse(raw).detail; } catch (_) { msg = raw.slice(0, 200); }
+      throw new Error(`(${resp.status}) ${msg || "알 수 없는 오류"}`);
+    }
     render(await resp.json());
     $("status").textContent = `완료 — ${((performance.now() - t0) / 1000).toFixed(1)}초`;
   } catch (e) {

@@ -107,15 +107,27 @@ FINAL_LINE_RULE = {
 }
 
 
+ELEM_KO = {"wood": "목(木)", "fire": "화(火)", "earth": "토(土)", "metal": "금(金)", "water": "수(水)"}
+_ZONE_KO = {"upper": "상정(이마)", "mid": "중정(눈~코)", "lower": "하정(입~턱)"}
+
+
+def samjeong_phrase(samjeong: dict) -> str:
+    """삼정 점수를 숫자 없이 서열 문장으로 — 결과지에 수치를 노출하지 않기 위함
+    (미로 v2 문서 §9: 오행·삼정 수치는 화면에 노출하지 않는다)."""
+    if samjeong["dominant"] == "balanced":
+        return "세 구간이 고르게 균형 잡힘"
+    ranked = sorted(("upper", "mid", "lower"), key=lambda z: samjeong[z], reverse=True)
+    return f"{_ZONE_KO[ranked[0]]}이 가장 발달, {_ZONE_KO[ranked[-1]]}은 상대적으로 약함"
+
+
 def evidence_value(key: str, analysis: dict) -> str:
-    """근거 키에 해당하는 실측값/라벨을 프롬프트용 문자열로 변환."""
+    """근거 키에 해당하는 관찰 라벨을 프롬프트용 문자열로 변환 (수치 제외)."""
     b = analysis["buckets"]
     oh, sj = analysis["ohaeng"], analysis["samjeong"]
-    elem_ko = {"wood": "목(木)", "fire": "화(火)", "earth": "토(土)", "metal": "금(金)", "water": "수(水)"}
     mapping = {
-        "FOREHEAD_UPPER": f"이마: {b.get('이마 너비', '')} / 상정 점수 {sj['upper']}",
+        "FOREHEAD_UPPER": f"이마: {b.get('이마 너비', '')}",
         "EYEBROW": f"눈썹: {b.get('눈썹 아치', '')}",
-        "GLABELLA": "미간: 두 눈썹 사이 간격 기준",
+        "GLABELLA": "미간: 두 눈썹 사이 간격",
         "EYE": f"눈: {b.get('눈 크기(세로 비율)', '')}, {b.get('눈꼬리 각도', '')}, {b.get('눈 사이 간격', '')}",
         "CHEEKBONE": f"광대·얼굴 폭: {b.get('얼굴 비율', '')}",
         "NOSE": f"코: {b.get('콧대 길이', '')}, {b.get('콧방울 너비', '')}",
@@ -124,9 +136,9 @@ def evidence_value(key: str, analysis: dict) -> str:
         "JAW_CHIN": f"턱·하관: {b.get('턱 폭', '')}, {b.get('턱선 각도', '')}",
         "FACE_SHAPE": f"얼굴윤곽: {b.get('얼굴 비율', '')}",
         "SYMMETRY": f"좌우균형: {b.get('좌우 균형', '')}",
-        "SAMJEONG_RATIO": f"삼정비율: 상정 {sj['upper']} / 중정 {sj['mid']} / 하정 {sj['lower']}",
-        "OHAENG_MAIN": f"오행 주형: {elem_ko[oh['main']]}형",
-        "OHAENG_SUB": f"오행 보조형: {elem_ko[oh['sub']]}형",
-        "MID_ZONE": f"중정: 중정 점수 {sj['mid']} ({b.get('삼정 비율', '')})",
+        "SAMJEONG_RATIO": f"삼정: {samjeong_phrase(sj)}",
+        "OHAENG_MAIN": f"오행 주형: {ELEM_KO[oh['main']]}형",
+        "OHAENG_SUB": f"오행 보조형: {ELEM_KO[oh['sub']]}형",
+        "MID_ZONE": f"중정: {b.get('삼정 비율', '')}",
     }
     return mapping[key]
