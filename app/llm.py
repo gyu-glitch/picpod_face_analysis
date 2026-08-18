@@ -101,6 +101,8 @@ _RE_EMOJI = re.compile(
     "[\U0001F000-\U0001FAFF\U00002600-\U000027BF\U0001F1E6-\U0001F1FF️✀-➿]+")
 # 프롬프트 지시문/필드명이 괄호째 새어 나오는 것: [각 시기에], {early], <중년>
 _RE_MARKER = re.compile(r"[\[{<][^\]}>\n]{0,20}[\]}>]")
+# 후보 문장을 여러 개 이어 붙일 때 쓰는 구분 기호
+_RE_ALT_SEP = re.compile(r"[〇◯○]")
 _RE_SCORE = re.compile(r"\d+\s*점")   # 수치 비노출 (미로 v2 §9)
 
 
@@ -122,6 +124,8 @@ def _find_artifacts(node, path: str = "") -> list[str]:
             bad.append(f"{path} 마크업/필드에코: {node[:50]}")
         if _RE_MARKER.search(node):
             bad.append(f"{path} 지시문 마커: {node[:50]}")
+        if _RE_ALT_SEP.search(node):
+            bad.append(f"{path} 후보 나열: {node[:50]}")
         if _RE_SCORE.search(node):
             bad.append(f"{path} 점수 노출: {node[:50]}")
         if not node.strip():
@@ -143,6 +147,9 @@ def _sanitize(node):
         s = re.sub(r"[\(\[]?\s*\d+\s*자[^.!?\n]*[\)\]]?\.?", "", s)  # 글자수 표기
         s = re.sub(r"\s*\*+\s*", " ", s)                    # 마크다운 강조 잔재
         s = re.sub(r"^\s*[-–—·]\s*", "", s)                 # 앞머리 리스트 마커
+        s = _RE_ALT_SEP.split(s)[0]                          # 후보 나열이면 첫 문장만
+        if len(re.findall(r"[「」]", s)) == 1:                # 짝 없는 낫표
+            s = re.sub(r"[「」]", "", s)
         # 문장 끝에 덧붙은 구호 꼬리 ( ...대처하면 성공이 기다려.~ 이끌어주자 )
         s = re.sub(r"(?<=[.!?])\s*~+\s*[^.!?~]{1,20}$", "", s)
         # 문장을 이어 붙이며 남긴 따옴표 접합 흔적 ( ...해요,", "금전 흐름... )

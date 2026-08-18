@@ -27,6 +27,28 @@ CLI 테스트:
 .\.venv\Scripts\python.exe tools\analyze_cli.py tests\faces\yoo_jaesuk.jpg --persona KIND,T,ROAST
 ```
 
+## 다른 앱에 붙이기 (모듈 사용)
+
+FastAPI 서버 없이 `app/api.py` 하나로 파이프라인 전체를 쓸 수 있다:
+
+```python
+from app.api import analyze_photo, analyze_only, life_graph_svg
+
+# 전체 (공통 분석 + 페르소나 해석, 키오스크 JSON 그대로)
+result = analyze_photo("face.jpg", personas=["kind", "spicy"])
+result["readings"]["kind"]        # KioskData_kind.json 구조
+result["analysis"]["type"]        # 유형·태그라인
+
+# LLM 없이 유형 판정만 (0.05초, Ollama 불필요)
+a = analyze_only("face.jpg")      # a.type.name, a.ohaeng, a.samjeong, ...
+
+svg = life_graph_svg(result["analysis"])   # 인생그래프 SVG (영수증·포토카드용)
+```
+
+이미지 인자는 경로/bytes/numpy(BGR) 모두 허용. 얼굴 0개·2개 이상이면
+`FaceDetectionError`. 새 PC 세팅은 [서버설치안내.md](서버설치안내.md) 참조 —
+모델(EXAONE·랜드마크)은 git에 없고 서버설치.bat이 내려받는다.
+
 ## LLM
 
 Ollama + EXAONE 3.5 필요. 환경변수:
