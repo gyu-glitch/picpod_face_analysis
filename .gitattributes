@@ -1,0 +1,5 @@
+# 줄바꿈 고정 — 스크립트가 플랫폼 반대 줄바꿈으로 체크아웃되면 실행이 깨진다
+*.bat      text eol=crlf
+*.cmd      text eol=crlf
+*.command  text eol=lf
+*.sh       text eol=lf

@@ -1,0 +1,22 @@
+# 실행 중 생기는 것들
+__pycache__/
+*.pyc
+*.log
+
+# 설치 산출물 (서버설치.bat이 재생성)
+.venv/
+models/
+
+# 런타임 데이터
+results/
+tests/faces/
+client/config.json
+client/state.json
+client/result/
+client/receiver.log
+
+# 배포 zip (tools/build_client_zips.py로 재생성)
+*.zip
+
+# 백업
+*.bak
