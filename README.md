@@ -46,8 +46,8 @@ svg = life_graph_svg(result["analysis"])   # 인생그래프 SVG (영수증·포
 ```
 
 이미지 인자는 경로/bytes/numpy(BGR) 모두 허용. 얼굴 0개·2개 이상이면
-`FaceDetectionError`. 새 PC 세팅은 [서버설치안내.md](서버설치안내.md) 참조 —
-모델(EXAONE·랜드마크)은 git에 없고 서버설치.bat이 내려받는다.
+`FaceDetectionError`. 새 PC 세팅은 [설치안내.md](설치안내.md) 참조 —
+모델(EXAONE·랜드마크)은 git에 없고 설치.bat이 내려받는다.
 
 ## LLM
 

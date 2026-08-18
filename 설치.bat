@@ -1,16 +1,17 @@
 @echo off
 rem ============================================================
-rem  PicPod face-analysis SERVER setup (analysis PC)
-rem  Run once after cloning the repo. Installs Python venv,
-rem  Ollama + EXAONE model, face landmark model, shortcuts.
+rem  PicPod face-analysis setup
+rem  Installs everything needed to use the pipeline as a module:
+rem    Python venv + packages, Ollama + EXAONE model, face model
+rem  Usage: just double-click.  (optional: setup.bat 7.8b|2.4b|both)
 rem ============================================================
-title face-analysis server setup
+title face-analysis setup
 setlocal EnableDelayedExpansion
 cd /d "%~dp0"
 
 echo.
 echo ============================================================
-echo   PicPod face-analysis SERVER setup
+echo   PicPod face-analysis setup
 echo ============================================================
 echo.
 
@@ -23,7 +24,7 @@ if errorlevel 1 (
 )
 
 rem ---------- 1. Python ----------
-echo [1/6] Checking Python...
+echo [1/5] Checking Python...
 where python >nul 2>nul
 if errorlevel 1 (
   echo       Installing Python 3.12...
@@ -35,7 +36,7 @@ if errorlevel 1 (
 echo       OK
 
 rem ---------- 2. venv + packages ----------
-echo [2/6] Creating venv and installing packages (a few minutes)...
+echo [2/5] Creating venv and installing packages (a few minutes)...
 if not exist .venv (
   python -m venv .venv
 )
@@ -48,7 +49,7 @@ if errorlevel 1 (
 echo       OK
 
 rem ---------- 3. Ollama ----------
-echo [3/6] Checking Ollama...
+echo [3/5] Checking Ollama...
 set OLLAMA_EXE=%LOCALAPPDATA%\Programs\Ollama\ollama.exe
 if not exist "%OLLAMA_EXE%" (
   echo       Installing Ollama...
@@ -67,13 +68,19 @@ if errorlevel 1 (
 echo       OK
 
 rem ---------- 4. LLM model ----------
-echo [4/6] Language model
-echo       [1] exaone3.5:7.8b  - better quality, needs ~6GB VRAM (recommended w/ GPU)
-echo       [2] exaone3.5:2.4b  - lighter, ~2.5GB VRAM
-echo       [3] both
-choice /c 123 /n /m "      Select (1/2/3): "
-if errorlevel 3 ( set MODELS=exaone3.5:7.8b exaone3.5:2.4b
-) else if errorlevel 2 ( set MODELS=exaone3.5:2.4b
+echo [4/5] Language model
+set PICK=%1
+if "%PICK%"=="" (
+  echo       [1] exaone3.5:7.8b  - better quality, ~6GB VRAM, recommended w/ GPU
+  echo       [2] exaone3.5:2.4b  - lighter, ~2.5GB VRAM
+  echo       [3] both
+  choice /c 123 /n /m "      Select (1/2/3): "
+  if errorlevel 3 ( set PICK=both
+  ) else if errorlevel 2 ( set PICK=2.4b
+  ) else set PICK=7.8b
+)
+if /i "%PICK%"=="both" ( set MODELS=exaone3.5:7.8b exaone3.5:2.4b
+) else if /i "%PICK%"=="2.4b" ( set MODELS=exaone3.5:2.4b
 ) else set MODELS=exaone3.5:7.8b
 for %%M in (!MODELS!) do (
   echo       Downloading %%M ...
@@ -82,30 +89,23 @@ for %%M in (!MODELS!) do (
 echo       OK
 
 rem ---------- 5. Face landmark model ----------
-echo [5/6] Downloading face landmark model...
+echo [5/5] Downloading face landmark model...
 if not exist models mkdir models
 if not exist models\face_landmarker.task (
   curl -L -s -o models\face_landmarker.task https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task
 )
 echo       OK
 
-rem ---------- 6. Shortcut ----------
-echo [6/6] Creating desktop shortcut...
-powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-  "$w=New-Object -ComObject WScript.Shell;" ^
-  "$d=[Environment]::GetFolderPath('Desktop');" ^
-  "$s=$w.CreateShortcut((Join-Path $d 'PicPod Analysis Server.lnk'));" ^
-  "$s.TargetPath='%~dp0서버실행.bat'; $s.WorkingDirectory='%~dp0'; $s.Save()"
-echo       OK
-
 echo.
 echo ============================================================
-echo   Done.
-echo   1. Right-click [방화벽허용.bat] -^> Run as administrator  (once)
-echo   2. Double-click [PicPod Analysis Server] on the Desktop
+echo   Done. Use it from your own code:
 echo.
-echo   This PC's address for clients:
-ipconfig | findstr /c:"IPv4"
-echo   Clients connect to  http://^<that address^>:8123
+echo     from app.api import analyze_photo
+echo     result = analyze_photo("face.jpg", personas=["kind"])
+echo.
+echo   Details: README.md  (module usage, tuning points)
+echo.
+echo   Optional HTTP server (only if you want the web GUI / LAN API):
+echo     run 서버실행.bat, and for LAN access run 방화벽허용.bat as admin
 echo ============================================================
 pause
