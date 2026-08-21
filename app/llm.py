@@ -37,6 +37,10 @@ _style_cache: dict[str, str] = {}
 # 영어·글자수 혼입은 프롬프트 + 재생성 + _sanitize 후처리로 잡는다.
 _KOTEXT = {"type": "string"}
 
+# 디자이너 이모지 분류 체계 — 각 텍스트 블록의 톤 태그 (enum으로 문법 강제)
+EMOTIONS = ["neutral", "positive", "interest", "worry", "warning", "cool", "money"]
+_EMOTION = {"type": "string", "enum": EMOTIONS}
+
 
 def _flat_schema(keys: list[str]) -> dict:
     """평탄한 문자열 dict 스키마.
@@ -46,20 +50,21 @@ def _flat_schema(keys: list[str]) -> dict:
     중첩 조립은 코드가 담당한다.
     """
     return {"type": "object",
-            "properties": {k: _KOTEXT for k in keys},
+            "properties": {k: (_EMOTION if k.endswith("_감정") else _KOTEXT) for k in keys},
             "required": keys}
 
 
 # 1차 호출: 삼정·오행 해석 + 5개 카테고리
-_KEYS_PART1 = ["삼정_카피", "삼정_해설", "오행_카피", "오행_해설"]
+_KEYS_PART1 = ["삼정_카피", "삼정_해설", "삼정_감정", "오행_카피", "오행_해설", "오행_감정"]
 for _c in P.CATEGORIES:
     _ko = P.CATEGORY_KO[_c]
-    _KEYS_PART1 += [f"{_ko}_카피", f"{_ko}_해설", f"{_ko}_조언", f"{_ko}_요지"]
+    _KEYS_PART1 += [f"{_ko}_카피", f"{_ko}_해설", f"{_ko}_조언", f"{_ko}_요지", f"{_ko}_감정"]
 
 # 2차 호출: 종합운 + 인생그래프 + 마지막 한 줄
-_KEYS_PART2 = ["종합운_카피", "종합운_해설", "인생그래프_카피",
-               "초년_카피", "초년_해설", "중년_카피", "중년_해설", "말년_카피", "말년_해설",
-               "인생그래프_조언", "마지막한줄"]
+_KEYS_PART2 = ["종합운_카피", "종합운_해설", "종합운_감정", "인생그래프_카피",
+               "초년_카피", "초년_해설", "초년_감정", "중년_카피", "중년_해설", "중년_감정",
+               "말년_카피", "말년_해설", "말년_감정",
+               "인생그래프_조언", "마지막한줄", "마지막한줄_감정"]
 
 _SCHEMA_PART1 = _flat_schema(_KEYS_PART1)
 _SCHEMA_PART2 = _flat_schema(_KEYS_PART2)
@@ -111,6 +116,8 @@ def _find_artifacts(node, path: str = "") -> list[str]:
     bad = []
     if isinstance(node, dict):
         for k, v in node.items():
+            if k.endswith("_감정") or k == "emotion":
+                continue  # enum 영어 값 — 아티팩트 아님
             bad += _find_artifacts(v, f"{path}.{k}" if path else k)
     elif isinstance(node, list):
         for i, v in enumerate(node):
@@ -136,7 +143,8 @@ def _find_artifacts(node, path: str = "") -> list[str]:
 def _sanitize(node):
     """남은 아티팩트를 기계적으로 제거 — 재생성으로도 안 잡힌 경우의 마지막 방어선."""
     if isinstance(node, dict):
-        return {k: _sanitize(v) for k, v in node.items()}
+        return {k: (v if k.endswith("_감정") or k == "emotion" else _sanitize(v))
+                for k, v in node.items()}
     if isinstance(node, list):
         return [_sanitize(v) for v in node]
     if isinstance(node, str):
@@ -184,6 +192,9 @@ def _common_header(persona: str, analysis: dict) -> list[str]:
         "- 한국어만 써라. 영어 단어·알파벳·이모지·별표를 절대 쓰지 마라.",
         "- 모든 칸을 빠짐없이 채워라. 빈칸으로 두지 마라.",
         "- 카피는 짧고 재치 있는 비유 한 줄. 설명하지 말고 툭 던지듯 짧게.",
+        "- _감정 칸은 그 블록 텍스트의 톤 태그 하나: neutral=담담한 서술 / positive=칭찬·희망"
+        " / interest=흥미·호기심 / worry=걱정·조심 / warning=따끔한 경고·독설"
+        " / cool=자신감·여유 / money=재물 이야기.",
         "- 해설은 2~3문장. 조언은 1~2문장. 각 칸은 자기 내용만 담고 다른 칸 내용을 섞지 마라.",
         f"- {P.COMMON_TONE}",
         "",
@@ -317,9 +328,14 @@ def assemble_kiosk_data(persona: str, analysis: dict, out: dict,
     now = datetime.now().astimezone()
     dominant_map = {"upper": "upper", "mid": "middle", "lower": "lower", "balanced": "balanced"}
 
+    def emo(prefix: str) -> str:
+        v = out.get(f"{prefix}_감정", "")
+        return v if v in EMOTIONS else "neutral"
+
     def hd(prefix: str) -> dict:
         return {"headline": out.get(f"{prefix}_카피", ""),
-                "description": out.get(f"{prefix}_해설", "")}
+                "description": out.get(f"{prefix}_해설", ""),
+                "emotion": emo(prefix)}
 
     return {
         "sessionId": session_id or analysis["analysis_id"],
@@ -344,8 +360,10 @@ def assemble_kiosk_data(persona: str, analysis: dict, out: dict,
                     **hd("오행"),
                 },
             },
-            **{cat: {**hd(P.CATEGORY_KO[cat]),
-                     "advice": out.get(f"{P.CATEGORY_KO[cat]}_조언", "")}
+            **{cat: {"headline": out.get(f"{P.CATEGORY_KO[cat]}_카피", ""),
+                     "description": out.get(f"{P.CATEGORY_KO[cat]}_해설", ""),
+                     "advice": out.get(f"{P.CATEGORY_KO[cat]}_조언", ""),
+                     "emotion": emo(P.CATEGORY_KO[cat])}
                for cat in P.CATEGORIES},
             "overallFortune": hd("종합운"),
             "lifeFlow": {
@@ -353,7 +371,8 @@ def assemble_kiosk_data(persona: str, analysis: dict, out: dict,
                 "stages": {"early": hd("초년"), "middle": hd("중년"), "later": hd("말년")},
                 "advice": out.get("인생그래프_조언", ""),
             },
-            "closingMessage": {"description": out.get("마지막한줄", "")},
+            "closingMessage": {"description": out.get("마지막한줄", ""),
+                               "emotion": emo("마지막한줄")},
         },
     }
 

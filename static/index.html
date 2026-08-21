@@ -51,6 +51,9 @@ button:disabled { background: #4a3f6b; cursor: wait; }
 .tabs button.on { background: #7c5cd6; font-weight: 700; }
 .section { background: rgba(0,0,0,.25); border-radius: 10px; padding: 13px 16px; margin-bottom: 10px; }
 .section h4 { font-size: .9rem; color: #a98ff5; }
+.emo { display: inline-block; margin-left: 8px; padding: 1px 9px; border-radius: 999px;
+  font-size: .68rem; font-weight: 400; vertical-align: middle;
+  background: rgba(245,213,138,.15); border: 1px solid rgba(245,213,138,.4); color: #f5d58a; }
 .section .ev { font-size: .72rem; color: #776a97; margin-bottom: 6px; }
 .section p { font-size: .87rem; }
 .section .advice { color: #cfc3ec; font-size: .82rem; margin-top: 6px; }
@@ -271,33 +274,34 @@ function render(data) {
     const r = it.reading, ft = r.faceType, lf = r.lifeFlow;
     const div = document.createElement("div");
     div.className = i === 0 ? "" : "hidden";
+    const emo = b => b && b.emotion ? `<span class="emo">${b.emotion}</span>` : "";
     div.innerHTML = `
       <div class="section">
-        <h4>삼정 — ${ft.threeSections.headline}</h4>
+        <h4>삼정 — ${ft.threeSections.headline}${emo(ft.threeSections)}</h4>
         <p>${ft.threeSections.description}</p>
       </div>
       <div class="section">
-        <h4>오행 — ${ft.fiveElements.headline}</h4>
+        <h4>오행 — ${ft.fiveElements.headline}${emo(ft.fiveElements)}</h4>
         <p>${ft.fiveElements.description}</p>
       </div>` +
       Object.keys(CAT_KO).map(cat => `
       <div class="section">
-        <h4>${CAT_KO[cat]} — ${r[cat].headline}</h4>
+        <h4>${CAT_KO[cat]} — ${r[cat].headline}${emo(r[cat])}</h4>
         <p>${r[cat].description}</p>
         <div class="advice">조언 · ${r[cat].advice}</div>
       </div>`).join("") + `
       <div class="section">
-        <h4>종합운 — ${r.overallFortune.headline}</h4>
+        <h4>종합운 — ${r.overallFortune.headline}${emo(r.overallFortune)}</h4>
         <p>${r.overallFortune.description}</p>
       </div>
       <div class="section">
         <h4>인생그래프 — ${lf.headline}</h4>
-        <p>초년 「${lf.stages.early.headline}」 ${lf.stages.early.description}</p>
-        <p>중년 「${lf.stages.middle.headline}」 ${lf.stages.middle.description}</p>
-        <p>말년 「${lf.stages.later.headline}」 ${lf.stages.later.description}</p>
+        <p>초년 「${lf.stages.early.headline}」 ${lf.stages.early.description} ${emo(lf.stages.early)}</p>
+        <p>중년 「${lf.stages.middle.headline}」 ${lf.stages.middle.description} ${emo(lf.stages.middle)}</p>
+        <p>말년 「${lf.stages.later.headline}」 ${lf.stages.later.description} ${emo(lf.stages.later)}</p>
         <div class="advice">조언 · ${lf.advice}</div>
       </div>
-      <div class="final-line">${r.closingMessage.description}</div>`;
+      <div class="final-line">${r.closingMessage.description} ${emo(r.closingMessage)}</div>`;
     box.appendChild(div);
   });
   if (tabs.firstChild) tabs.firstChild.classList.add("on");
